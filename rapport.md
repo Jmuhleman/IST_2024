@@ -6,22 +6,118 @@ Group : L01GrA
 
 Date : 02.03.2024
 
-## Task 1
+## TASK 1: EXPLORE BLOCK DEVICES AND FILESYSTEMS
 
-* 1
-   - The boot partition is mounted on /dev/sda2
-   - metadatas: brw-rw----  1 root disk      8,   2 feb 22 20:37 sda2
-   - The root partition is mounted on /dev/sda3
-   -  jul@jul-VirtualBox:~$ sudo hdparm -t /dev/sda2
-        /dev/sda2:
-        Timing buffered disk reads: 512 MB in  2.85 seconds = 179.78 MB/sec
-* 2
-   - We can see the hex values of the data stored on /dev/sda3
-* 3
-   - copy the text of target file
-   - run: strings /dev/sda3 | grep "researched text"
+1. > Using the `lsblk` command, list the existing block devices.
 
-TODO: TO FORMAT ACCORDING PROFESSOR REQUIREMENTS
+   ```bash
+   $ lsblk
+   NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
+   fd0      2:0    1     4K  0 disk
+   loop0    7:0    0  63.4M  1 loop /snap/core20/1974
+   loop1    7:1    0     4K  1 loop /snap/bare/5
+   loop2    7:2    0  63.9M  1 loop /snap/core20/2182
+   loop3    7:3    0 266.6M  1 loop /snap/firefox/3836
+   loop4    7:4    0  73.9M  1 loop /snap/core22/858
+   loop5    7:5    0 349.7M  1 loop /snap/gnome-3-38-2004/143
+   loop6    7:6    0 237.2M  1 loop /snap/firefox/2987
+   loop7    7:7    0 485.5M  1 loop /snap/gnome-42-2204/120
+   loop8    7:8    0  91.7M  1 loop /snap/gtk-common-themes/1535
+   loop9    7:9    0  12.3M  1 loop /snap/snap-store/959
+   loop10   7:10   0  53.3M  1 loop /snap/snapd/19457
+   loop11   7:11   0  40.4M  1 loop /snap/snapd/20671
+   loop12   7:12   0   497M  1 loop /snap/gnome-42-2204/141
+   loop13   7:13   0   452K  1 loop /snap/snapd-desktop-integration/83
+   sda      8:0    0    20G  0 disk
+   ├─sda1   8:1    0     1M  0 part
+   ├─sda2   8:2    0   513M  0 part /boot/efi
+   └─sda3   8:3    0  19.5G  0 part /var/snap/firefox/common/host-hunspell
+                                    /
+   sr0     11:0    1 155.3M  0 rom
+   sr1     11:1    1   4.7G  0 rom
+   ```
+
+   
+
+   - > On which block device is the boot partition mounted? In the `/dev` directory find the special file corresponding to this block device. With `ls -l` list its metadata.
+
+     The boot partition is mounted on `/dev/sda2`.
+
+     We can list it's metadata (using a long listing format) with the following command:
+
+     ```bash
+     $ ls -l /dev/sda2
+     brw-rw---- 1 root disk 8, 2 Mär  1 20:21 /dev/sda2
+     ```
+
+     These are: file permissions, number of links, owner name, owner group, file size (bytes), last modification time and pathname.
+
+     
+
+   - > On which block device is the root (/) partition mounted? What is the name of its special file?
+
+     The root partition is mounted on `/dev/sda3`.
+
+     
+
+   - > With `hdparm -t` do a timing test on the boot partition. What throughput do you get?
+
+     ```bash
+     $ sudo hdparm -t /dev/sda2
+     
+     /dev/sda2:
+      Timing buffered disk reads: 512 MB in  0.25 seconds = 2008.50 MB/sec
+     ```
+
+     Note that the throughput  may vary from time to time, depending on the system and its use.
+
+   
+
+2. > Convince yourself that the special file representing the root (/) partition can be read just like any other file. As it contains binary data, just opening it with `less` will mess up the terminal, so use the `xxd` hexdump utility.
+
+   - > To see how `xxd` works, create a small text file and open it with `xxd -a`.
+
+     ```bash
+     $ cd /usr/share/doc
+     $ echo "This is a test!" > testfile.txt | xxd -a testfile.txt
+     00000000: 5468 6973 2069 7320 6120 7465 7374 210a  This is a test!.
+     ```
+
+     As we can see, `xxd` allow us to create a hex dump of the given file.
+
+     
+
+   - > Now open the special file with the same command. You may pipe its output into `less`. What do you see? If your root partition uses LVM (verify with `lsblk`), you should see text strings containing volume group configuration information.
+
+     Using the command `sudo xxd -a /dev/sda3 | less`, we can see the hex dump of `sda3`. The beginning of the file is shown below. Note that the `*` replaces nul-lines, as requested by the `-a` option.
+
+     ```bash
+     00000000: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+     *
+     00000400: 0080 1300 00fc 4d00 33e6 0300 ab98 1d00  ......M.3.......
+     00000410: 8671 1000 0000 0000 0200 0000 0200 0000  .q..............
+     00000420: 0080 0000 0080 0000 0020 0000 b12a e265  ......... ...*.e
+     00000430: b12a e265 0500 ffff 53ef 0100 0100 0000  .*.e....S.......
+     00000440: d773 d765 0000 0000 0000 0000 0100 0000  .s.e............
+     00000450: 0000 0000 0b00 0000 0001 0000 3c00 0000  ............<...
+     00000460: c602 0000 6b04 0000 76be eedf f81c 4ecb  ....k...v.....N.
+     00000470: 8fc3 0908 14c0 1177 0000 0000 0000 0000  .......w........
+     00000480: 0000 0000 0000 0000 2f00 0000 0000 0000  ......../.......
+     00000490: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+     *
+     ```
+
+     
+
+3. >  As the special file represents all the blocks of a partition, the content of all files of the root partition should be there. Pick a text file at random (for example a file in `/usr/share/doc/`) and try to find its content in the special file.
+   >
+   >  - Tip: There is a filter utility that looks for data that looks like text strings and removes everything else: the `strings` command.
+
+   As we have created our file `testfile.txt` in the folder `/usr/share/doc/`, we can search for its contents with the command `sudo strings /dev/sda3 | grep "This is a test!"`.
+
+   This will retrieve the raw binary data from the `/dev/sda3` block device, then filter the results for lines containing the text `This is a test!`, which was present in the file created earlier.
+
+
 
 ## Task 2
 
