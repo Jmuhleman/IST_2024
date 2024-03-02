@@ -1,4 +1,10 @@
-# Rendu IST 2024 Labo 1 
+# IST Lab 01 : File Systems 
+
+Authors : Butty Vicky & Mühlemann Julien
+
+Group : L01GrA
+
+Date : 02.03.2024
 
 ## Task 1
 
