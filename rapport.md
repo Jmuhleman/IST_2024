@@ -43,7 +43,7 @@ Date : 02.03.2024
 
      The boot partition is mounted on `/dev/sda2`.
 
-     We can list it's metadata (using a long listing format) with the following command:
+     We can list its metadata (using a long listing format) with the following command:
 
      ```bash
      $ ls -l /dev/sda2
@@ -225,7 +225,7 @@ Date : 02.03.2024
    >   - The first partition will be a primary partition, have a file system type of `fat32`, start at 0 and end at about half the free space.
    >   - The second partition will be a primary partition, have a file system type of `ext4`, start at half the free space, end at the free space.
    
-   We created the partitions with the two following command : `mkpart primary fat32 0 63GB` for the first partition and `mkpart primary ext4 63GB -1`.  Note that the first command alert us that *"The resulting partition is not properly aligned for best performance"*. This is due to the partition not starting at 0, as we can see it if we print the informations again :
+   We created the partitions with the two following command : `mkpart primary fat32 0 63GB` for the first partition and `mkpart primary ext4 63GB -1`.  Note that the first command alerts us that *"The resulting partition is not properly aligned for best performance"*. This is due to the partition not starting at 0, as we can see it if we print the informations again :
    
    ```
    (parted) print
@@ -255,7 +255,7 @@ Date : 02.03.2024
    > - The first partition should have the file system type `vfat`.
    > - The second partition should have the file system type `ext4`.
 
-   To format the two partitions, we used the following comands `sudo mkfs.vfat /dev/sdb1` for the first partition and `sudo mkfs.ext4 /dev/sdb2` for the second partition.
+   To format the two partitions, we used the following commands `sudo mkfs vfat /dev/sdb1` for the first partition and `sudo mkfs ext4 /dev/sdb2` for the second partition.
 
    We can double check that it worked by using the command `findmnt --real` again. We now can see the two entries corresponding to our new partitions
 
@@ -535,23 +535,141 @@ Date : 02.03.2024
 
 
 
-task 4
-		4.
-			Free inodes:              10981
-		5.
-			sudo fsck /dev/sdb2
-		6.
-			 sudo mount /dev//sdb2 /mnt/part2
-task 5
-		1.
-			
-		5.	seen as:
+## TASK 4: MANAGE AN EXT4 PARTITION
+
+1. > Unmount the ext4 partition on the external disk.
+
+```bash
+sudo umount /dev/sdb2
+```
+
+2. > Run a file system check using the fsck command.
+```bash
+
+fsck /dev/sdb2
+```
+
+4. > Display the file system structure with the dumpe2fs command. How many inodes are unused?
+```bash
+sudo dumpe2fs -h /dev/sdb2
+```
+
+The following line informs us about the # of Inodes available.
+```bash Free inodes: 10981```
+
+
+5. > Intentionally corrupt the file system by overwriting 4 MB of data, starting 10 kB in:
+   
+```bash
+ 
+sudo dd if=/dev/zero of=/dev/sdb2 bs=1k seek=10 count=4k
+```
+6. > Try to mount the partition. You should get an error message. Repair the file system with the fsck 	command.
+
+Try to mount the partition.
+```bash
+
+sudo mount /dev//sdb2 /mnt/part2
+```
+output:
+```bash
+mount: /mnt/part2: wrong fs type, bad option, bad superblock on /dev/sdb2, missing codepage or helper program, or other error.
+```
+We perform the fix on the FS with:
+```bash
+
+sudo fsck /dev/sdb2
+```
+
+7. > Mount the repaired partition.
+```bash
+sudo mount /dev/sdb2 /mnt/part2
+```
+
+## TASK 5: CREATE A FILE SYSTEM IN A FILE
+
+2. > Find the next available loopback device:
+
+```bash
+losetup -f
+```
+output:
+```bash
+/dev/loop10
+```
+3. > Associate the loopback device with the file:
+
+```bash
+ sudo losetup /dev/loop10 /tmp/bigfile
+```
+
+4. > Verify that the association is OK:
+
+```bash
+/dev/loop9: []: (/var/lib/snapd/snaps/gtk-common-themes_1535.snap)
+/dev/loop7: []: (/var/lib/snapd/snaps/snap-store_959.snap)
+/dev/loop10: []: (/tmp/bigfile)
+/dev/loop5: []: (/var/lib/snapd/snaps/core20_2182.snap)
+/dev/loop12: []: (/var/lib/snapd/snaps/firefox_3836.snap)
+```
+We can see the loop10 associated with our 'bigfile'
+
+5. > Create an ext4 file system on block device /dev/loop6. Create a mountpoint in /mnt/bigfile. Mount the file system on the mountpoint. How does findmnt show the new file system?
+```bash
+sudo parted /dev/loop10
+mkfs msdos
+
+mkpart
+	primary
+	ext4
+	0
+	100
+
+sudo mkfs -t ext4 /dev/loop10
+sudo mkdir /mnt/bigfile
+sudo mount /dev/loop10 /mnt/bigfile
+```
+The bigfile is seen as:
+
+```bash
+findmnt --real
 			└─/mnt/bigfile                       /dev/loop10 ext4       rw,relatime
-			
-		6.
-			 sync -d /dev/bigfile
-			 sudo strings /dev/loop10 | grep 'asddfsadfhlsdkjfh'
-			
-						
+```		
+6. > Create a few files in the file system with unique strings. By searching the content of bigfile, can you find the strings? Use the sync command to force the kernel to write buffered data to disk.
+
+```bash
+sudo echo 'I am a black cat' >> a
+sync -d /dev/bigfile
+sudo strings /dev/loop10 | grep 'I am a black cat'
+```	
+output:
+```bash
+I am a black cat
+```
+7. > Undo everything:
+
+```bash
+sudo umount /dev/loop10
+sudo losetup -d /dev/loop6
+losetup -a
+```
+output:
+```bash
+/dev/loop1: []: (/var/lib/snapd/snaps/gnome-3-38-2004_143.snap)
+/dev/loop8: []: (/var/lib/snapd/snaps/core22_858.snap)
+/dev/loop6: []: (/var/lib/snapd/snaps/snapd_19457.snap)
+/dev/loop13: []: (/var/lib/snapd/snaps/gnome-42-2204_141.snap)
+/dev/loop4: []: (/var/lib/snapd/snaps/firefox_2987.snap)
+/dev/loop11: []: (/var/lib/snapd/snaps/snapd-desktop-integration_83.snap)
+/dev/loop2: []: (/var/lib/snapd/snaps/core20_1974.snap)
+/dev/loop0: []: (/var/lib/snapd/snaps/bare_5.snap)
+/dev/loop9: []: (/var/lib/snapd/snaps/gtk-common-themes_1535.snap)
+/dev/loop7: []: (/var/lib/snapd/snaps/snap-store_959.snap)
+/dev/loop5: []: (/var/lib/snapd/snaps/core20_2182.snap)
+/dev/loop12: []: (/var/lib/snapd/snaps/firefox_3836.snap)
+/dev/loop3: []: (/var/lib/snapd/snaps/gnome-42-2204_120.snap)
+```
+We can see there is no more loop10
+
 
 
