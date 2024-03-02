@@ -119,77 +119,212 @@ Date : 02.03.2024
 
 
 
-## Task 2
+## TASK 2: PREPARE AND PARTITION A DISK
+
+1. > Before you plug in the disk, list the existing block devices. Using the `findmnt` command find all the partitions that are already mounted.
+   >
+   > - In `findmnt`'s output you will see many pseudo file systems. You can suppress them with the `--real` option.
+
+   The `findmnt` command allow us to list all mounted filesystems. Using the `--real` option, we only print the real filesystems. In our case, those are the result :
+
+   ```bash
+   $ findmnt --real
+   TARGET                                   SOURCE                         FSTYPE      OPTIONS
+   /                                        /dev/sda3                      ext4        rw,relatime,errors=remount-ro
+   ├─/run/user/128/doc                      portal                         fuse.portal rw,nosuid,nodev,relatime,user_id=128,group_id=134
+   ├─/run/user/1000/doc                     portal                         fuse.portal rw,nosuid,nodev,relatime,user_id=1000,group_id=1000
+   ├─/snap/bare/5                           /dev/loop0                     squashfs    ro,nodev,relatime,errors=continue,threads=single
+   ├─/snap/core20/1974                      /dev/loop1                     squashfs    ro,nodev,relatime,errors=continue,threads=single
+   ├─/snap/core20/2182                      /dev/loop2                     squashfs    ro,nodev,relatime,errors=continue,threads=single
+   ├─/snap/core22/858                       /dev/loop3                     squashfs    ro,nodev,relatime,errors=continue,threads=single
+   ├─/snap/firefox/2987                     /dev/loop5                     squashfs    ro,nodev,relatime,errors=continue,threads=single
+   ├─/snap/firefox/3836                     /dev/loop4                     squashfs    ro,nodev,relatime,errors=continue,threads=single
+   ├─/snap/gnome-42-2204/120                /dev/loop6                     squashfs    ro,nodev,relatime,errors=continue,threads=single
+   ├─/snap/gnome-42-2204/141                /dev/loop7                     squashfs    ro,nodev,relatime,errors=continue,threads=single
+   ├─/var/snap/firefox/common/host-hunspell /dev/sda3[/usr/share/hunspell] ext4        ro,noexec,noatime,errors=remount-ro
+   ├─/snap/snapd/19457                      /dev/loop9                     squashfs    ro,nodev,relatime,errors=continue,threads=single
+   ├─/snap/snapd-desktop-integration/83     /dev/loop11                    squashfs    ro,nodev,relatime,errors=continue,threads=single
+   ├─/snap/gnome-3-38-2004/143              /dev/loop8                     squashfs    ro,nodev,relatime,errors=continue,threads=single
+   ├─/snap/gtk-common-themes/1535           /dev/loop12                    squashfs    ro,nodev,relatime,errors=continue,threads=single
+   ├─/snap/snap-store/959                   /dev/loop10                    squashfs    ro,nodev,relatime,errors=continue,threads=single
+   ├─/snap/snapd/20671                      /dev/loop13                    squashfs    ro,nodev,relatime,errors=continue,threads=single
+   └─/boot/efi                              /dev/sda2                      vfat        rw,relatime,fmask=0077,dmask=0077,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro
+   ```
+
+   
+
+2. > Attach the disk to your computer.
+   >
+   > List again the block devices. Which new block devices and special files appeared? These represent the disk and its partitions you just attached.
+
+   When we connected the disk to the VM, it did not appear in the output of the command `findmnt`. This is normal, as we didn't made any partition for now. However, we can see that the disk is correctly detected using the `lsblk` command. Two new lines will show with the disk informations :
+
+   ```
+   sdb      8:16   1 117.2G  0 disk
+   └─sdb1   8:17   1 117.2G  0 part
+   ```
+   
+   
+   
+   
+   
+3. > Create a partition table on the disk and create two partitions of equal size using the `parted` tool.
+   >
+   > You can consult [Gentoo Linux Documentation -- Preparing the Disks](https://www.gentoo.org/doc/en/handbook/handbook-amd64.xml?part=1&chap=4) as a reference on how to use `parted`.
+   >
+   > - Using superuser privileges invoke `parted` with a single parameter which is the special file representing the disk. Be careful not to confuse the special file for the disk (ending in a letter) and for the partitions (ending in a number).
+
+   We used the command `sudo parted /dev/sdb`.
+
+   
+
+   > - Display the existing partitions with the `print` command. If the disk is completely blank you will get an error message about a missing disk label.
+
+   As the USB disk was previously formatted in Windows, we can see that a primary partition already exists.
+
+   ```bash
+   (parted) print
+   Model: SMI USB DISK (scsi)
+   Disk /dev/sdb: 126GB
+   Sector size (logical/physical): 512B/512B
+   Partition Table: msdos
+   Disk Flags:
+   
+   Number  Start   End    Size   Type     File system  Flags
+    1      1049kB  126GB  126GB  primary
+   ```
+
+   
+
+   > - Use the `mktable` command to create a partition table (overwriting any existing one). It should have Master Boot Record (MBR) layout (i.e. label type `msdos`).
+
+   We used the command `mktable msdos` in the `parted` tool. Printing the information of the disk after creating the partition table, we can now see the newly created one, without any entries.
+
+   
+   
+   > - Display the free space with the command `print free` (roughly the size of the disk minus some overhead). Write the value down.
+   
+   ```
+   (parted) print free
+   Model: SMI USB DISK (scsi)
+   Disk /dev/sdb: 126GB
+   Sector size (logical/physical): 512B/512B
+   Partition Table: msdos
+   Disk Flags:
+   
+   Number  Start  End    Size   Type  File system  Flags
+           1024B  126GB  126GB        Free Space
+   
+   ```
+   
+   Note that the free space starts at the same bytes as our old partition.
+   
+   
+   
+   > - Use the `mkpart` command to create the partitions.
+   >   - The first partition will be a primary partition, have a file system type of `fat32`, start at 0 and end at about half the free space.
+   >   - The second partition will be a primary partition, have a file system type of `ext4`, start at half the free space, end at the free space.
+   
+   We created the partitions with the two following command : `mkpart primary fat32 0 63GB` for the first partition and `mkpart primary ext4 63GB -1`.  Note that the first command alert us that *"The resulting partition is not properly aligned for best performance"*. This is due to the partition not starting at 0, as we can see it if we print the informations again :
+   
+   ```
+   (parted) print
+   Model: SMI USB DISK (scsi)
+   Disk /dev/sdb: 126GB
+   Sector size (logical/physical): 512B/512B
+   Partition Table: msdos
+   Disk Flags:
+   
+   Number  Start   End     Size    Type     File system  Flags
+    1      512B    63.0GB  63.0GB  primary  fat32        lba
+    2      63.0GB  126GB   62.8GB  primary  ext4         lba
+   ```
+   
+   The `lba` flag is due to the msdos partition table and tell the systems to use linear (LBA) mode, as said in the documentation.
+   
+   
+   
+   > - Quit parted and verify that there are now two special files in `/dev` that correspond to the two partitions.
+   
+   We can check this with the `ls /dev` command and we can see that there are two special files named `sdb1` and `sdb2` corresponding to our newly created partitions.
+   
+   
+   
+4. > Format the two partitions using the `mkfs` command.
+   >
+   > - The first partition should have the file system type `vfat`.
+   > - The second partition should have the file system type `ext4`.
+
+   To format the two partitions, we used the following comands `sudo mkfs.vfat /dev/sdb1` for the first partition and `sudo mkfs.ext4 /dev/sdb2` for the second partition.
+
+   We can double check that it worked by using the command `findmnt --real` again. We now can see the two entries corresponding to our new partitions
+
+   
+
+5. > Create two empty directories in the `/mnt` directory as mount points, called `part1` and `part2`. Mount the newly created file systems in these directories.
+
+   We created the two directories simultaneously with the command :
+
+   ```bash
+   $ sudo mkdir /mnt/part1 /mnt/part2
+   ```
+
+   To make sure that the two folders were created correctly, we checked them with `ls`:
+
+   ``` bash
+   $ ls /mnt
+   part1  part2
+   ```
+
+   We then mounted the partitions in these directories using the appropriate commands:
+
+   ```bash
+   $ sudo mount /dev/sdb1 /mnt/part1
+   $ sudo mount /dev/sdb2 /mnt/part2
+   ```
+
+   Using the `lsblk ` command, we can check that the mount are correct. We can now see the following lines :
+
+   ```bash
+   sdb      8:16   1 117.2G  0 disk
+   ├─sdb1   8:17   1  58.7G  0 part /mnt/part1
+   └─sdb2   8:18   1  58.5G  0 part /mnt/part2
+   ```
+
+   We could also see them with the `findmnt --real` command, as the following lines are now visible:
+
+   ```
+   TARGET                                   SOURCE                         FSTYPE      OPTIONS
+   ...
+   ├─/mnt/part1                             /dev/sdb1                      vfat        rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro
+   └─/mnt/part2                             /dev/sdb2                      ext4        rw,relatime
+   ```
+
+   
+
+6. > How much free space is available on these filesystems? Use the `df` command to find out. What does the `-h` option do?
+
+   The `df` command allows us to display the space available on all currently mounted file systems. The `-h` option will print sizes in powers of 1024 instead of the number of 1K blocks.
+
+   ```bash
+   $ df -h
+   Filesystem      Size  Used Avail Use% Mounted on
+   tmpfs           388M  2.0M  386M   1% /run
+   /dev/sda3        20G   12G  6.4G  65% /
+   tmpfs           1.9G     0  1.9G   0% /dev/shm
+   tmpfs           5.0M  4.0K  5.0M   1% /run/lock
+   /dev/sda2       512M  6.1M  506M   2% /boot/efi
+   tmpfs           388M   76K  387M   1% /run/user/128
+   tmpfs           388M   68K  387M   1% /run/user/1000
+   /dev/sdb1        59G   32K   59G   1% /mnt/part1
+   /dev/sdb2        58G   24K   55G   1% /mnt/part2
+   ```
+
+   Looking at the last two lines, which correspond to the directories we've just mounted, we can see that both still have 99% of the space available. We can see that the second partition has less space because some of it is used for the file system.
 
 
-lsblk -> visual
+​	
 
-sudo mkfs -t fat32 /dev/sdb -> formattage
-
-sudo mkdir -p /mnt/part1 /mnt/part -> create mount point 'usb'
-
-sudo mount -t auto /dev/sdb /mnt/part -> mount sdb on part folder
-
-sudo parted /dev/sdb -> managing the external drive
-
-
-(parted) print
-		Model: VBOX HARDDISK (scsi)
-		Disk /dev/sdb: 90,0MB
-		Sector size (logical/physical): 512B/512B
-		Partition Table: msdos
-		Disk Flags:
-
-		Number  Start   End     Size    Type     File system  Flags
-		 1      512B    45,0MB  45,0MB  primary               lba
-		 2      45,0MB  90,0MB  45,0MB  primary  ext2
-		 
-
-Creating metadatas and formatting but not completly according professor assistant
-we need to format once again with mkfs command as following:
-
-sudo mkfs -t vfat /dev/sdb1
-		mkfs.fat 4.2 (2021-01-31)
-
-sudo mkfs -t ext4 /dev/sdb2
-
-		Creating filesystem with 10985 4k blocks and 10992 inodes
-
-		Allocating group tables: done
-		Writing inode tables: done
-		Creating journal (1024 blocks): done
-		Writing superblocks and filesystem accounting information: done
-		
-		
-		
-		
-		
-sudo mount /dev/sdb1 /mnt/part1
-sudo mount /dev/sdb2 /mnt/part2
-
-
-lsblk
-
-		sdb      8:16   0  85,8M  0 disk
-		├─sdb1   8:17   0  42,9M  0 part /mnt/part1
-		└─sdb2   8:18   0  42,9M  0 part /mnt/part2
-		sr0     11:0    1  1024M  0 rom
-
-
-
-df
-		disk free output  in MB
-		
-		/dev/sdb1        43M     0   43M   0% /mnt/part1 -> 100% free
-		/dev/sdb2        37M   24K   34M   1% /mnt/part2 -> 99% free
-
-df -h
-		output in 1k blocks
-		/dev/sdb1          43828        0     43828   0% /mnt/part1
-		/dev/sdb2          37060       24     33964   1% /mnt/part2
-		
-		
-		
 Task 3
 	1. 
 		a. 	 Linux version 6.5.0-21-generic
