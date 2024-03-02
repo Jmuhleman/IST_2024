@@ -322,41 +322,219 @@ Date : 02.03.2024
 
    Looking at the last two lines, which correspond to the directories we've just mounted, we can see that both still have 99% of the space available. We can see that the second partition has less space because some of it is used for the file system.
 
-
 ​	
 
-Task 3
-	1. 
-		a. 	 Linux version 6.5.0-21-generic
-			(buildd@lcy02-amd64-091)
-			(x86_64-linux-gnu-gcc-12 
-			(Ubuntu 12.3.0-1ubuntu1~22.04) 
-			12.3.0, GNU ld (GNU Binutils for Ubuntu) 2.38) 
-			#21~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Feb  9 13:32:52 UTC 2
-		
-		b.  -bash
-	
-	
-		e.  cat filesystems | grep -v 'nodev'
-	
-	
-	3. 
-		a.
-			/dev/sdb2: UUID="c05ca81b-f41a-4fba-9cd3-3200a74ff1a4" BLOCK_SIZE="4096" TYPE="ext4" PARTUUID="d16fa281-02"
-			/dev/sdb1: SEC_TYPE="msdos" UUID="6800-9D09" BLOCK_SIZE="512" TYPE="vfat" PARTUUID="d16fa281-01"
-			-> OK
-		
-		b.
-			the 'BLOCK_SIZE' for the size of 
-	
-		
-		
-		
-	4.
-		a.
-			UUID=0c31dc6b-2500-4c2f-ba34-22a5850d1265 /               ext4    errors=remount-ro 0       1
-			
-		
+## TASK 3: EXPLORE THE FILE SYSTEM SUPPORT IN THE KERNEL
+
+1. > Find out which file systems the kernel supports right now. The kernel makes information about itself available to userspace programs in a pseudo file system that is mounted at `/proc`. The files in that file system describe kernel objects.
+   >
+   > - List the content of `/proc`. What is the version of the kernel in `/proc/version`?
+
+   By listing the content with `ls /proc` we can see a lot of folders with numbers as name.
+
+   ```bash
+   $ ls /proc
+   1     1325  1643  201   27   593  837            keys		
+   103   1329  1675  202   278  596  84             key-users
+   1035  1336  1678  203   279  6    85             kmsg
+   1039  1338  1688  204   29   60   86             kpagecgroup
+   1042  1342  1693  205   3    61   87             kpagecount
+   1043  1346  1697  206   31   62   88             kpageflags
+   1049  1362  17    207   318  63   880            loadavg
+   105   14    1702  208   32   64   887            locks
+   1052  1401  1706  209   34   65   89             mdstat
+   1065  1412  1723  21    347  66   894            meminfo
+   1067  1459  1725  210   35   67   909            misc
+   1079  1472  174   211   355  68   911            modules
+   109   1485  175   2110  358  69   93             mounts
+   1094  1492  176   2111  36   695  931            mpt
+   11    1495  1766  2112  369  697  932            mtrr
+   1105  15    177   212   37   70   94             net
+   1120  1501  178   213   38   706  95             pagetypeinfo
+   1171  1513  179   214   39   708  960            partitions
+   1177  1519  1790  215   4    71   969            pressure
+   1188  1522  18    216   40   710  975            schedstat
+   1199  1523  180   217   41   714  acpi           scsi
+   12    1529  1805  2176  42   72   asound         self
+   1228  153   181   218   43   727  bootconfig     slabinfo
+   1233  1530  182   2184  44   73   buddyinfo      softirqs
+   1237  1531  183   219   45   731  bus            stat
+   1239  1532  184   2190  46   733  cgroups        swaps
+   1244  1534  185   22    48   736  cmdline        sys
+   1248  154   186   220   485  74   consoles       sysrq-trigger
+   1253  155   187   221   486  740  cpuinfo        sysvipc
+   1257  156   188   222   49   75   crypto         thread-self
+   1264  1565  189   223   5    757  devices        timer_list
+   1266  157   19    2236  50   759  diskstats      tty
+   1273  1572  190   2237  51   76   dma            uptime
+   1282  1579  191   2238  52   77   driver         version
+   1289  158   192   2248  53   773  dynamic_debug  version_signature
+   1295  159   193   2256  54   78   execdomains    vmallocinfo
+   1296  16    194   2260  55   785  fb             vmstat
+   13    160   195   2263  56   787  filesystems    zoneinfo
+   1304  1608  196   2267  57   79   fs
+   1308  161   197   2278  574  8    interrupts
+   1311  162   198   23    575  80   iomem
+   1317  1621  199   245   577  81   ioports
+   1318  163   2     250   579  819  irq
+   1320  1637  20    251   58   82   kallsyms
+   1321  164   200   26    59   83   kcore
+   ```
+
+   We can check the version of the kernel as follows :
+
+   ```bash
+   $ cat /proc/version
+   Linux version 6.5.0-21-generic (buildd@lcy02-amd64-091) (x86_64-linux-gnu-gcc-12 (Ubuntu 12.3.0-1ubuntu1~22.04) 12.3.0, GNU ld (GNU Binutils for Ubuntu) 2.38) #21~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Feb  9 13:32:52 UTC 2
+   ```
+
+   
+
+   - > The directories with numbers represent the running processes. The numbers are the process ids. Display the process id of your bash session with `echo $$`. List the information in the corresponding directory. What was the command line that started this process (look in `cmdline`)?
+
+     ```bash
+     $ echo $$
+     2291
+     $ ls /proc/2291
+     arch_status         fd                 net            setgroups
+     attr                fdinfo             ns             smaps
+     autogroup           gid_map            numa_maps      smaps_rollup
+     auxv                io                 oom_adj        stack
+     cgroup              ksm_merging_pages  oom_score      stat
+     clear_refs          ksm_stat           oom_score_adj  statm
+     cmdline             limits             pagemap        status
+     comm                loginuid           patch_state    syscall
+     coredump_filter     map_files          personality    task
+     cpu_resctrl_groups  maps               projid_map     timens_offsets
+     cpuset              mem                root           timers
+     cwd                 mountinfo          sched          timerslack_ns
+     environ             mounts             schedstat      uid_map
+     exe                 mountstats         sessionid      wchan
+     ```
+
+     We can see the command line that started this process in the `cmdline` file. Reading it, we see that the process was started by `bash` .
+
+     
+
+   - > The kernel lists the file systems it supports right now file `filesystems`. List them.
+
+     ```bash
+     $ cat /proc/filesystems
+     nodev   sysfs
+     nodev   tmpfs
+     nodev   bdev
+     nodev   proc
+     nodev   cgroup
+     nodev   cgroup2
+     nodev   cpuset
+     nodev   devtmpfs
+     nodev   configfs
+     nodev   debugfs
+     nodev   tracefs
+     nodev   securityfs
+     nodev   sockfs
+     nodev   bpf
+     nodev   pipefs
+     nodev   ramfs
+     nodev   hugetlbfs
+     nodev   devpts
+             ext3
+             ext2
+             ext4
+             squashfs
+             vfat
+     nodev   ecryptfs
+             fuseblk
+     nodev   fuse
+     nodev   fusectl
+     nodev   efivarfs
+     nodev   mqueue
+     nodev   pstore
+     nodev   autofs
+     nodev   binfmt_misc
+     ```
+
+     
+
+   - > Can you find the `proc` filesystem itself in the list? How is it tagged? All file systems with that tag are pseudo file systems.
+
+     By reading the results, we can find the line `proc` filesystem, tagged with `nodev`, as all other pseudo file sytems.
+
+     
+
+   - > List the real (non-pseudo) file systems.
+
+     ```bash
+     $ cat /proc/filesystems | grep -v 'nodev'
+             ext3
+             ext2
+             ext4
+             squashfs
+             vfat
+             fuseblk
+     ```
+
+     
+
+2. > Find out which file systems the kernel is able to support by looking at the available kernel modules. The files containing kernel modules can be found at `lib/modules/<kernel version>/kernel/fs`. List them.
+
+   ```bash
+   $ ls /lib/modules/6.5.0-21-generic/kernel/fs/
+   9p              ceph      fscache  minix       omfs       sysv
+   adfs            coda      fuse     netfs       orangefs   ubifs
+   affs            cramfs    gfs2     nfs         overlayfs  udf
+   afs             dlm       hfs      nfs_common  pstore     ufs
+   autofs          efs       hfsplus  nfsd        qnx4       vboxsf
+   befs            erofs     hpfs     nilfs2      qnx6       xfs
+   bfs             exfat     isofs    nls         quota      zonefs
+   binfmt_misc.ko  f2fs      jffs2    ntfs        reiserfs
+   btrfs           fat       jfs      ntfs3       romfs
+   cachefiles      freevxfs  lockd    ocfs2       smb
+   ```
+
+   
+
+3. > When a new disk is inserted the kernel knows which file system to activate by looking at a label that indicates the type of file system. That label is part of the partition metadata (called *signature*). Use the `blkid` command to list the metadata of all known partitions (mounted or not). Note that you might need to run the command with admin permissions to display all partitions metadata.
+   >
+   > - Verify that the partitions you created are labeled correctly.
+   > - There is another piece of information in the partition metadata. What does it do?
+
+   Using the `blkid` command, we listed the metadata of the known partitions. We found the lines corresponding to our partitions, with the `TYPE` label as expected:
+
+   ```bash
+   /dev/sdb2: UUID="9fca0610-608c-4ceb-9d32-6799fc6718c6" BLOCK_SIZE="4096" TYPE="ext4" PARTUUID="80480d50-02"
+   /dev/sdb1: UUID="86C3-DB21" BLOCK_SIZE="512" TYPE="vfat" PARTUUID="80480d50-01"
+   ```
+
+   We can see the `UUID` and `PARTUUID`. We also have the `BLOCK_SIZE` information which shows us the size of the block used in the partitions.
+
+   
+
+4. > An older way for the kernel to find out which file system to activate is the file `/etc/fstab`. This file lists all the file systems that should be mounted when the system boots. It indicates the special file that represents the partition, the directory where it should be mounted (the *mount point*), and the file system to activate.
+   >
+   > - List the content of `/etc/fstab`. What line is responsible for mounting the root (/) file system? This line has a particular way of referencing the partition, how?
+
+   ```bash
+   $ cat /etc/fstab
+   # /etc/fstab: static file system information.
+   #
+   # Use 'blkid' to print the universally unique identifier for a
+   # device; this may be used with UUID= as a more robust way to name devices
+   # that works even if disks are added and removed. See fstab(5).
+   #
+   # <file system> <mount point>   <type>  <options>       <dump>  <pass>
+   # / was on /dev/sda3 during installation
+   UUID=76beeedf-f81c-4ecb-8fc3-090814c01177 /               ext4    errors=remount-ro 0       1
+   # /boot/efi was on /dev/sda2 during installation
+   UUID=3D7D-1890  /boot/efi       vfat    umask=0077      0       1
+   /swapfile                                 none            swap    sw              0       0
+   /dev/fd0        /media/floppy0  auto    rw,user,noauto,exec,utf8 0       0
+   ```
+
+   The first uncommented line is the one responsible for mounting the root filesystem, referring to the partition by its `UUID' instead of its name.
+
+
+
 task 4
 		4.
 			Free inodes:              10981
