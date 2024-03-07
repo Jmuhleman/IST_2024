@@ -10,21 +10,74 @@ Date : 07.03.2024
 
 1. > Reset your external disk. Using `parted` remove all partitions, or simply write a new partition table.
 
-   
+```bash
+$ sudo parted /dev/sdb
+$ mktable
+msdos
 
-   
 
 2. > Create four partitions with these characteristics: primary, 25 MB size, type `ext4`.
 
-   
-
+```bash
+$ mkpart primary 0 50 ext4
+quit
+$ sudo mkfs -t ext4 /dev/sdb1 ../dev/sdbn .../dev/sdb4 
+```
    
 
 3. > List the available LVM commands. They belong to the Debian package *lvm2* which should already be installed. Use `dpkg` with the `-L` option to list the content of the package. The commands are all located in the `/sbin` directory. Use `grep` to filter and `sort` to sort alphabetically.
 
-   
-
-   
+The command typed is as follows:
+```bash
+$ sudo dpkg -L lvm2 | grep /sbin/
+/sbin/fsadm
+/sbin/lvm
+/sbin/lvmdump
+/sbin/lvmpolld
+/sbin/lvchange
+/sbin/lvconvert
+/sbin/lvcreate
+/sbin/lvdisplay
+/sbin/lvextend
+/sbin/lvmconfig
+/sbin/lvmdiskscan
+/sbin/lvmsadc
+/sbin/lvmsar
+/sbin/lvreduce
+/sbin/lvremove
+/sbin/lvrename
+/sbin/lvresize
+/sbin/lvs
+/sbin/lvscan
+/sbin/pvchange
+/sbin/pvck
+/sbin/pvcreate
+/sbin/pvdisplay
+/sbin/pvmove
+/sbin/pvremove
+/sbin/pvresize
+/sbin/pvs
+/sbin/pvscan
+/sbin/vgcfgbackup
+/sbin/vgcfgrestore
+/sbin/vgchange
+/sbin/vgck
+/sbin/vgconvert
+/sbin/vgcreate
+/sbin/vgdisplay
+/sbin/vgexport
+/sbin/vgextend
+/sbin/vgimport
+/sbin/vgimportclone
+/sbin/vgmerge
+/sbin/vgmknodes
+/sbin/vgreduce
+/sbin/vgremove
+/sbin/vgrename
+/sbin/vgs
+/sbin/vgscan
+/sbin/vgsplit
+```
 
 4. > List all partitions that could potentially host a Physical Volume by using `pvs` with the `--all` option.
 
