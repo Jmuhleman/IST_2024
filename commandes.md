@@ -28,7 +28,8 @@
 - sudo losetup /dev/loop6 /tmp/bigfile associate loopback with file
 - sync: force to write from buffers
 
-
+- sudo dpkg -L <package name> : list the contente of the package
+- pvs --all: List all partitions that could potentially host a Physical Volume
 
 
 
