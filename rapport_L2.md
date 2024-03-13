@@ -23,7 +23,7 @@ $ mkpart primary 0 50 ext4
 quit
 $ sudo mkfs -t ext4 /dev/sdb1 ../dev/sdbn .../dev/sdb4 
 ```
-   
+
 
 3. > List the available LVM commands. They belong to the Debian package *lvm2* which should already be installed. Use `dpkg` with the `-L` option to list the content of the package. The commands are all located in the `/sbin` directory. Use `grep` to filter and `sort` to sort alphabetically.
 
@@ -80,52 +80,160 @@ $ sudo dpkg -L lvm2 | grep /sbin/
 ```
 
 4. > List all partitions that could potentially host a Physical Volume by using `pvs` with the `--all` option.
+```bash
+$ sudo pvs --all
+  PV          VG Fmt Attr PSize PFree
+  /dev/loop0         ---     0     0
+  /dev/loop1         ---     0     0
+  /dev/loop10        ---     0     0
+  /dev/loop11        ---     0     0
+  /dev/loop12        ---     0     0
+  /dev/loop14        ---     0     0
+  /dev/loop3         ---     0     0
+  /dev/loop4         ---     0     0
+  /dev/loop5         ---     0     0
+  /dev/loop6         ---     0     0
+  /dev/loop7         ---     0     0
+  /dev/loop8         ---     0     0
+  /dev/loop9         ---     0     0
+  /dev/sda2          ---     0     0
+  /dev/sda3          ---     0     0
+  /dev/sdb1          ---     0     0
+  /dev/sdb2          ---     0     0
+  /dev/sdb3          ---     0     0
+  /dev/sdb4          ---     0     0
+  ```
 
-   
-
-   
 
 5. > On the four partitions of your external disk, create four Physical Volumes using `pvcreate`. Add the `-vv` option so that it tells you in detail what it is doing. For the first partition copy the output of the command into the report, but copy only the lines about the partition that receives the Physical Volume and ignore the other messages.
 
    
+```bash
+$ sudo pvcreate /dev/sdb1 -vv
 
+Device /dev/sdb1: queue/minimum_io_size is 512 bytes.
+Device /dev/sdb1: queue/optimal_io_size is 0 bytes.
+Device /dev/sdb1: alignment_offset is 0 bytes.
+Set up physical volume for "/dev/sdb1" with 48828 available sectors.
+Scanning for labels to wipe from /dev/sdb1
+Zeroing start of device /dev/sdb1.
+Writing physical volume data to disk "/dev/sdb1".
+/dev/sdb1: Writing label to sector 1 with stored offset 32.
+Physical volume "/dev/sdb1" successfully created.
+Unlocking /run/lock/lvm/P_global
+```
    
 
 6. > Display detailed information about the first Physical Volume using `pvdisplay`.
 
+```bash
+$ sudo pvdisplay
+"/dev/sdb1" is a new physical volume of "23.84 MiB"
+--- NEW Physical volume ---
+PV Name               /dev/sdb1
+VG Name
+PV Size               23.84 MiB
+Allocatable           NO
+PE Size               0
+Total PE              0
+Free PE               0
+Allocated PE          0
+PV UUID               oBLk2i-Ldz4-4nQB-gHcq-LeAr-wZHh-GuzHwZ
+
+"/dev/sdb2" is a new physical volume of "24.00 MiB"
+--- NEW Physical volume ---
+PV Name               /dev/sdb2
+VG Name
+PV Size               24.00 MiB
+Allocatable           NO
+PE Size               0
+Total PE              0
+Free PE               0
+Allocated PE          0
+PV UUID               6x0yEs-yqCa-4gwf-Kpfu-hi0s-iHgL-guXz42
+
+"/dev/sdb3" is a new physical volume of "24.00 MiB"
+--- NEW Physical volume ---
+PV Name               /dev/sdb3
+VG Name
+PV Size               24.00 MiB
+Allocatable           NO
+PE Size               0
+Total PE              0
+Free PE               0
+Allocated PE          0
+PV UUID               S4cGfQ-oZBH-6UdG-dxBC-MLWf-ZCOx-RJ2BVd
+
+"/dev/sdb4" is a new physical volume of "23.00 MiB"
+--- NEW Physical volume ---
+PV Name               /dev/sdb4
+VG Name
+PV Size               23.00 MiB
+Allocatable           NO
+PE Size               0
+Total PE              0
+Free PE               0
+Allocated PE          0
+PV UUID               Lh92a0-XbGT-lEkm-ZhhN-mynE-g6Kt-XbtL07
+```
    
 
-   
-
-   
 
 ## TASK 2: CREATE TWO VOLUME GROUPS
 
 1. > Create a first Volume Group `lab-vg1` that contains only the first Physical Volume. Display the Physical Volume again with `pvdisplay`. What has changed?
 
-   
+```bash
+$ sudo vgcreate lab-vg1 /dev/sdb1
+Volume group "lab-vg1" successfully created
+```
 
-   
+The name of the Volume group has been set to lab-vg1, it is now allocatable and we can see the physical extent size of 4 MB its total and free space.
+```bash
+  PV Name               /dev/sdb1
+  VG Name               lab-vg1
+  PV Size               23.84 MiB / not usable 3.84 MiB
+  Allocatable           yes
+  PE Size               4.00 MiB
+  Total PE              5
+  Free PE               5
+```
 
 2. > Create a second Volume Group `lab-vg2` that contains Physical Volumes 2 and 3.
 
-   
-
+```bash
+$ sudo vgcreate lab-vg2 /dev/sdb2 /dev/sdb3
+  Volume group "lab-vg2" successfully created
+```
    
 
 3. > List all Volume Groups with `vgs`. Then list all Physical Volumes with `pvs`. What do you see?
 
-   
+```bash
+$ sudo vgs
+  VG      #PV #LV #SN Attr   VSize  VFree
+  lab-vg1   1   0   0 wz--n- 20.00m 20.00m
+  lab-vg2   2   0   0 wz--n- 40.00m 40.00m
+```
 
-   
+```bash
+$ sudo pvs
+  PV         VG      Fmt  Attr PSize  PFree
+  /dev/sdb1  lab-vg1 lvm2 a--  20.00m 20.00m
+  /dev/sdb2  lab-vg2 lvm2 a--  20.00m 20.00m
+  /dev/sdb3  lab-vg2 lvm2 a--  20.00m 20.00m
+  /dev/sdb4          lvm2 ---  23.00m 23.00m
+```
 
-   
 
 ## TASK 3: CREATE LOGICAL VOLUMES
 
 1. > On the Volume Group `lab-vg1` create a Logical Volume of size 20 MB with the command `lvcreate -L 20M lab-vg1`.
 
-   
+```bash
+$ sudo lvcreate -L 20M lab-vg1
+  Logical volume "lvol0" created.
+```
 
    
 
