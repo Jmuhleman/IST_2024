@@ -235,47 +235,84 @@ $ sudo lvcreate -L 20M lab-vg1
   Logical volume "lvol0" created.
 ```
 
-   
 
 2. > Verify hat the new volume appears when you use `lvs` to list Logical Volumes. Also verify that it appears when you use `lsblk` to list the block devices. What is the name of the special file in `/dev` that represents the volume?
 
-   
+```bash
+$ sudo lvs
+  LV    VG      Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lvol0 lab-vg1 -wi-a----- 20.00m
+```
 
-   
+```bash
+sdb                  8:16   0   100M  0 disk
+├─sdb1               8:17   0  23.8M  0 part
+│ └─lab--vg1-lvol0 252:0    0    20M  0 lvm
+├─sdb2               8:18   0    24M  0 part
+```
+
+The name of the file in dev /dev/mapper/lab--vg1-lvol0 vol1/
+
 
 3. > Create an ext4 file system on the volume. Mount the volume. Fill the file system with a 14 MB file using `dd` (Google it).
 
-   
+```bash
+$ sudo mkfs -t ext4 /dev/mapper/lab--vg1-lvol0
+```
 
-   
+```bash
+$ sudo mount /dev/mapper/lab--vg1-lvol0 /mnt/vol1
+``` 
+
+```bash
+$ sudo dd if=/dev/mapper/lab--vg1-lvol0 of=bigfile bs=1M count=14
+```
+
 
 4. > On the Volume Group `lab-vg2` create another Logical Volume of size 20 MB, create an ext4 file system on it and mount it. Create a file named `foo` that contains the text `111`.
 
    
-
+```bash
+$ sudo lvcreate -L 20M lab-vg2
+```
    
+```bash
+$ sudo mkfs -t ext4 /dev/mapper/lab--vg2-lvol0
+ ```
 
+```bash
+$ sudo mount /dev/mapper/lab--vg2-lvol0 /mnt/vol2
+```
+
+```bash
+$ sudo echo "111" | sudo tee foo
+```
    
 
 ## TASK 4: GROW A FILE SYSTEM WHILE IT IS IN USE
 
 1. > Verify that the file system is indeed full (use `df -h`).
 
-   
-
+```bash
+/dev/mapper/lab--vg1-lvol0   15M   15M     0 100% /mnt/vol1
+```
+We can see the 100% which appears to be the free space.
    
 
 2. > Verify that the Volume Group is full (use `vgs`).
 
    
-
-   
+```bash
+  lab-vg1   1   1   0 wz--n- 20.00m     0
+```
+We can see '0' which is the available space.
 
 3. > Extend the Volume group using `vgextend` and verify with `vgs`.
 
-   
 
-   
+```bash
+$ sudo vgextend lab-vg1 /dev/sdb4
+```
 
 4. > Extend the Logical Volume by an additional 20 MB using `lvextend --size <new_size> <volume_group>/<logical_volume>`.
 
