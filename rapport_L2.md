@@ -316,15 +316,24 @@ $ sudo vgextend lab-vg1 /dev/sdb4
 
 4. > Extend the Logical Volume by an additional 20 MB using `lvextend --size <new_size> <volume_group>/<logical_volume>`.
 
-   
-
-   
+```bash
+$ sudo lvextend -L +20M /dev/lab-vg1/lvol0
+```
+We get now both lab-vg1 and lab-vg2 having 40MB capacity. 
+Capacity has been extended on the logical level. We now need to resize the file system with resize2fs   
 
 5. > Grow the file system while it is mounted using `resize2fs` and verify its new capacity with `df -h`. Note: not all file systems support growing while being mounted. In that case you have to stop all applications using the file system, unmount, grow, remount, and restart the applications.
 
    
-
-   
+```bash
+$ sudo resize2fs /dev/lab-vg1/lvol0
+```
+```bash
+$ df -h
+   LV    VG      Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lvol0 lab-vg1 -wi-a----- 40.00m
+  lvol0 lab-vg2 -wi-ao---- 40.00m
+```  
 
    
 
