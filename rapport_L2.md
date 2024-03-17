@@ -345,13 +345,23 @@ $ df -h
    >
    > Note that LVM snapshots are read/write by default.
 
-   
+```bash
+$ sudo lvcreate --snapshot --name snap --size 10M /dev/lab-vg2/lvol0
+  Rounding up size to full physical extent 12.00 MiB
+  Logical volume "snap" created.
+```   
 
    
 
 2. > Display an overview of all Logical Volumes using `lvs`. Which column shows the name of the original volume?
 
-   
+```bash
+$ sudo lvs
+  LV    VG      Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lvol0 lab-vg1 -wi-a----- 20.00m
+  lvol0 lab-vg2 owi-aos--- 20.00m
+  snap  lab-vg2 swi-a-s--- 12.00m      lvol0  0.10
+```
 
    
 
@@ -362,51 +372,112 @@ $ df -h
    > - What line shows the space allocated for the snapshot volume?
    > - What does COW stand for?
 
-   
 
+- the LV snapshot status line. It specifies that the snapshot logical volume (snap) serves as a destination for the original volume named lvol0.
+
+- the LV Size line. It specifies the size of the logical volume lvol0, which is 20.00 MiB.
+
+- the LV Size line. It specifies the size of the snapshot logical volume snap, which is also 20.00 MiB.
+
+- COW stands for Copy-On-Write. COW refers to a technique where data changes are tracked by creating a copy of the original data only when it is modified 
+
+ ```bash
+     --- Logical volume ---
+  LV Path                /dev/lab-vg2/snap
+  LV Name                snap
+  VG Name                lab-vg2
+  LV UUID                hLyX2b-D254-Qxhm-OXg1-UpUW-bpgg-Uj1Zvq
+  LV Write Access        read/write
+  LV Creation host, time ubuntu-VirtualBox, 2024-03-17 11:16:43 +0100
+  LV snapshot status     active destination for lvol0
+  LV Status              available
+  # open                 0
+  LV Size                20.00 MiB
+  Current LE             5
+  COW-table size         12.00 MiB
+  COW-table LE           3
+  Allocated to snapshot  0.10%
+  Snapshot chunk size    4.00 KiB
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           252:4
+```
    
 
 4. > Mount the snapshot volume. Using the file `foo` you created earlier verify that the two volumes behave like independent copies.
 
-   
+We modified the content of foo file. e.g: 
+```bash
+$ sudo echo "2" | sudo tee foo
+```
+
+We now have "2" in foo on the snap volume whereas we still have "111" in the lab-vg2 volume.
+Therefore the volumes behaves independently.
 
    
 
 5. > Make the data of the original volume change completely by using the `dd` command to write a new file of 14 MB size. Run `df -h` to see how it affects the fullness of the original volume and the snapshot. What do you see?
 
-   
+```bash
+$ sudo dd if=/dev/mapper/lab--vg2-lvol0 of=new_file bs=1M count=14
+14+0 records in
+14+0 records out
+14680064 bytes (15 MB, 14 MiB) copied, 2.11044 s, 7.0 MB/s
+```
+```bash
+$ df -h
+Filesystem                  Size  Used Avail Use% Mounted on
+tmpfs                       507M  1.6M  506M   1% /run
+/dev/sda3                    24G   12G   11G  53% /
+tmpfs                       2.5G     0  2.5G   0% /dev/shm
+tmpfs                       5.0M  4.0K  5.0M   1% /run/lock
+/dev/sda2                   512M  6.1M  506M   2% /boot/efi
+tmpfs                       507M   96K  507M   1% /run/user/1000
+/dev/mapper/lab--vg2-lvol0   15M   15M     0 100% /mnt/vol2
+/dev/mapper/lab--vg2-snap    15M   28K   14M   1% /mnt/snap
+```
+The volume lab-vg2 is now fully occupied.
 
-   
 
    - > The way that you allocated it, is the snapshot volume able support a change of 14 MB of data?
 
-     
-
-     
+No, it is not.
 
    - > What happened? Why?
 
+    
+     Albeit the snapshot does not initially consume space on disk, if we make a 14MB change on the snapshot  volume
+     those 14MB will need 14MB of new extends
+```bash
+mount: /mnt/snap: can't read superblock on /dev/mapper/lab--vg2-snap.
+```
      
-
      
 
 6. > Remove the broken snapshot volume.
 
-   
-
-   
+```bash
+$ sudo lvremove /dev/lab-vg2/snap
+```
 
 7. > Redo the above, this time allocating sufficient space to the snapshot volume to support a complete change of data of the original volume.
 
-   
+```bash
+$ sudo lvcreate --snapshot --name snap --size 20M /dev/lab-vg2/lvol0
+```
 
+We allocate 20MB for the snapshot 
    
 
 ### TASK 6: PROVISION A THIN VOLUME AND SNAPSHOT IT
 
 1. > Remove all Logical Volumes from Volume Group `lab-vg2`.
 
-   
+```bash
+$ sudo lvremove /dev/lab-vg2/*
+```
 
    
 
@@ -414,34 +485,75 @@ $ df -h
    >
    > - a thin data Logical Volume called `pool0` of 28 MB
    > - a thin metadata Logical Volume called `pool0meta` of 4 MB
+```bash
+$ sudo lvcreate -n pool0 -L 28M lab-vg2
+  Logical volume "pool0" created.
+```
 
-   
-
-   
+```bash
+$ sudo lvcreate -n pool0meta -L 4M lab-vg2
+  Logical volume "pool0meta" created.
+```
 
 3. > Combine the two into a thin pool Logical Volume. List the Logical Volumes using `lvs`. Use the `-a` option to list also the hidden ones.
 
-   
+```bash
+$ sudo lvconvert --type thin-pool --poolmetadata lab-vg2/pool0meta lab-vg2/pool0
+```
 
+```bash
+$ sudo lvs -a
+  LV              VG      Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  [lvol0_pmspare] lab-vg2 ewi-------  4.00m
+
+  pool0           lab-vg2 twi-a-tz-- 28.00m             0.00   10.84
+
+  [pool0_tdata]   lab-vg2 Twi-ao---- 28.00m
+
+  [pool0_tmeta]   lab-vg2 ewi-ao----  4.00m
+```
    
 
 4. > Create a thin Logical Volume from the thin pool named `thin1` and give it a size of 80 MB, although the thin pool only has 28 MB capacity. What warnings to you see?
 
-   
+```bash
+$ sudo lvcreate -n thin1 -V 80M --thinpool pool0 lab-vg2
+  WARNING: Sum of all thin volume sizes (80.00 MiB) exceeds the size of thin pool lab-vg2/pool0 and the size of whole volume group (60.00 MiB).
+  WARNING: You have not turned on protection against thin pools running out of space.
+  WARNING: Set activation/thin_pool_autoextend_threshold below 100 to trigger automatic extension of thin pools before they get full.
+  Logical volume "thin1" created.
+```
 
-   
+We see a warning because as stated, the sum of the volumes is greater than the pool availability.
+System informs us that we can turn up a protection against pools running out of space.
 
 5. > Create an ext4 file system on `thin1`. Mount the file system. How much capacity does `df -h` see in the file system?
 
-   
+```bash
+$ sudo mkfs -t ext4 /dev/mapper/lab--vg2-thin1
+mke2fs 1.46.5 (30-Dec-2021)
+Discarding device blocks: done
+Creating filesystem with 20480 4k blocks and 20480 inodes
+.
+.
+```
+
+```bash
+$ df -h
+Filesystem                  Size  Used Avail Use% Mounted on
+/dev/mapper/lab--vg2-thin1   71M   24K   66M   1% /mnt/vol2   
+```
+df sees the capacity at 71MB.
 
    
 
 6. > Do experiments: Fill the file system with a bit of data by using `dd` to write files and verify that it behaves normally. Then write more and more data until you cross the size of the thin pool and see what happens. You can see LVM's log messages by using the `dmesg` command, they appear as `device-mapper`. What do you observe?
 
-   
 
-   
+We filled up the volume with dd until the messages as below appears. The pool is not able anymore to provide space on the thin volume.
+```bash
+[14704.710624] device-mapper: thin: 252:2: reached low water mark for data device: sending event.
+```
 
 
 
@@ -456,3 +568,11 @@ $ df -h
 > - The backup files need to be physically distant and sent to another datacenter located a few kilometers away.
 >
 > Describe a potential solution and explain your thought process.
+
+Here is our solution:
+
+1. We can first make a snapshot of the volume to be backed up. We can perform it on production so that the database does not need to be interrupted. (constraint #1 is complied)
+
+2. We can send the data of the snapshot on a physically distant server so that we respect redundancy of the backup.(constraint # 2 filled).
+
+3. We should implement an automatic backup at regular times. E.G. with a script on amazon S3. etc..
