@@ -449,7 +449,7 @@ No, it is not.
 
     
      Albeit the snapshot does not initially consume space on disk, if we make a 14MB change on the snapshot  volume
-     those 14MB will need 14MB of new extends
+     those 14MB will need 14MB of new extends (copy on write)
 ```bash
 mount: /mnt/snap: can't read superblock on /dev/mapper/lab--vg2-snap.
 ```
