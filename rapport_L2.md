@@ -676,3 +676,10 @@ $ sudo dpkg -L lvm2 | grep /sbin/ | sort
 > - The backup files need to be physically distant and sent to another datacenter located a few kilometers away.
 >
 > Describe a potential solution and explain your thought process.
+
+We choose the following solution:
+
+- We take an initial snapshot of the volumes that need to be backed up. Since we don't have to stop the system, we can do it in production without the hudge timeout.
+- We send this first snapshot to the remote server for redundancy.
+- We need to set a threshold at which a new snapshot is created to keep the volumes relatively small and easy to transfer. When the threshold is reached, a new snapshot is taken and sent to the remote server.
+- We also need to program an automatic backup at regular intervals to keep track of the changes. This will reduce the amount of lost data in case of unexpected events.
