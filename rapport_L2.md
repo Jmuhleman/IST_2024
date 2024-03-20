@@ -130,7 +130,7 @@ $ sudo dpkg -L lvm2 | grep /sbin/ | sort
 
 5. > On the four partitions of your external disk, create four Physical Volumes using `pvcreate`. Add the `-vv` option so that it tells you in detail what it is doing. For the first partition copy the output of the command into the report, but copy only the lines about the partition that receives the Physical Volume and ignore the other messages.
 
-   We use the command `udo pvcreate /dev/sdb1 -vv` and the  output lines about the partition are as follow :
+   We use the command `sudo pvcreate /dev/sdb1 -vv` and the  output lines about the partition are as follow :
 
    ```bash
      /dev/sdb1: size is 48828 sectors
