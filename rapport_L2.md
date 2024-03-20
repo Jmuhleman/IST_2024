@@ -583,42 +583,85 @@ $ sudo dpkg -L lvm2 | grep /sbin/ | sort
 
 1. > Remove all Logical Volumes from Volume Group `lab-vg2`.
 
-   
+   We removed them with `sudo lvremove /dev/lab-vg2/*`. Note that it may not be possible if the file systems are in use.
 
    
 
 2. > Follow the explanations in the Ubuntu manual on [lvmthin](https://manpages.ubuntu.com/manpages/bionic/en/man7/lvmthin.7.html) to create
    >
    > - a thin data Logical Volume called `pool0` of 28 MB
+   
+   For this, we use the command `sudo lvcreate -n pool0 -L 28M lab-vg2`.
+   
    > - a thin metadata Logical Volume called `pool0meta` of 4 MB
-
    
-
+   This was made using the command `sudo lvcreate -n pool0meta -L 4M lab-vg2`. 
    
-
+   
+   
 3. > Combine the two into a thin pool Logical Volume. List the Logical Volumes using `lvs`. Use the `-a` option to list also the hidden ones.
 
-   
+   We combined them using `sudo lvconvert --type thin-pool --poolmetadata lab-vg2/pool0meta lab-vg2/pool0`. We then used `lvs` to see the combined volume :
+
+   ```bash
+   $ sudo lvs -a
+     LV              VG      Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+     lvol0           lab-vg1 -wi-a----- 40.00m
+     [lvol0_pmspare] lab-vg2 ewi-------  4.00m
+     pool0           lab-vg2 twi-a-tz-- 28.00m             0.00   10.84
+     [pool0_tdata]   lab-vg2 Twi-ao---- 28.00m
+     [pool0_tmeta]   lab-vg2 ewi-ao----  4.00m
+   ```
 
    
 
 4. > Create a thin Logical Volume from the thin pool named `thin1` and give it a size of 80 MB, although the thin pool only has 28 MB capacity. What warnings to you see?
 
-   
+   ```bash
+   $ sudo lvcreate -n thin1 -V 80M --thinpool pool0 lab-vg2
+     WARNING: Sum of all thin volume sizes (80.00 MiB) exceeds the size of thin pool lab-vg2/pool0 and the size of whole volume group (40.00 MiB).
+     WARNING: You have not turned on protection against thin pools running out of space.
+     WARNING: Set activation/thin_pool_autoextend_threshold below 100 to trigger automatic extension of thin pools before they get full.
+     Logical volume "thin1" created.
+   ```
+
+   This warning informs us that the size of the new thin volume exceeds the size of our thin pool. A protection can be enabled if we don't want our thin pools to run out of space.
 
    
 
 5. > Create an ext4 file system on `thin1`. Mount the file system. How much capacity does `df -h` see in the file system?
 
+   We created the file system with `sudo mkfs -t ext4 /dev/lab-vg2/thin1` and mounted it with the command `sudo mount /dev/lab-vg2/thin1 /mnt/thin` in a previously created directory. With `df -h` we can see that our mount has a size of 71 MB and only 1% used.
+
+   ```
+   Filesystem                  Size  Used Avail Use% Mounted on
    
+   /dev/mapper/lab--vg2-thin1   71M   24K   66M   1% /mnt/thin
+   ```
 
    
 
 6. > Do experiments: Fill the file system with a bit of data by using `dd` to write files and verify that it behaves normally. Then write more and more data until you cross the size of the thin pool and see what happens. You can see LVM's log messages by using the `dmesg` command, they appear as `device-mapper`. What do you observe?
 
-   
+   We filled the file system with `dd`. As soon as we reached the maximum size of the pool, the file created was smaller than the requested size and an error message was shown :
 
+   ```bash
+   $ sudo dd if=/dev/zero of=/mnt/thin/bigfile4 bs=1M count=20
+   dd: error writing '/mnt/thin/bigfile4': No space left on device
+   10+0 records in
+   9+0 records out
+   9781248 bytes (9.8 MB, 9.3 MiB) copied, 0.0232297 s, 421 MB/s
+   ```
    
+   We then looked at the LVM logs and saw the error messages:
+   
+   ```
+   device-mapper: thin: 252:3: reached low water mark for data device: sending event.
+   device-mapper: thin: 252:3: switching pool to out-of-data-space (queue IO) mode
+   device-mapper: thin: 252:3: switching pool to out-of-data-space (error IO) mode
+   ```
+   
+   We can see that a first warning was sent when we created our files and reached the low water mark. Then another was sent when we created the file that filled the remaining space in the pool. The last message was certainly sent when we tried to create a file again, even though we knew the pool was full.
 
 
 
