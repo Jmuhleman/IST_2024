@@ -1,5 +1,12 @@
+# IST Lab 03 : OBJECT STORAGE (AMAZON S3)
 
-TODO: retravailler les réponses
+Authors : Butty Vicky & Mühlemann Julien
+
+Group : L01GrB
+
+Date : 26.03.2024
+
+## TASK 2: USE THE AWS COMMAND-LINE INTERFACE TO MANAGE BUCKETS AND OBJECTS
 
 
 
