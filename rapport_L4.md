@@ -1,6 +1,6 @@
 ---
 title: IST - Lab 04
-subject: OBJECT STORAGE (AMAZON S3)
+subject: S3 ACCESS CONTROL
 author: Butty Vicky & Mühlemann Julien
 group: L04GrB
 date: 09.04.2024
