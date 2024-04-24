@@ -34,7 +34,32 @@ TODO
 TODO
 pretty website ;-)
 
-```
+´´´
 
 
+## TASK 2: UPLOAD THE CURRENT MEASUREMENT DATA TO S3 AND RUN SQL QUERIES ON IT
+
+
+
+
+
+## TASK 6: TRANSFORM THE WEATHER STATIONS FILE INTO A CSV FILE
+
+
+### 3: 
+$ cat ch.meteoschweiz.messnetz-automatisch_en.json | yq -P . - > yaml.out
+
+
+### 4:
+$ cat ch.meteoschweiz.messnetz-automatisch_en.json | jq '.crs'
+$ cat ch.meteoschweiz.messnetz-automatisch_en.json | jq '.features'
+
+the features key
+### 5:
+$ cat ch.meteoschweiz.messnetz-automatisch_en.json | jq '.features|.[]'
+
+
+### 6:
+
+$ cat ch.meteoschweiz.messnetz-automatisch_en.json | jq '.features|.[]|.id' > ids.out
 
