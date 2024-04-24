@@ -17,10 +17,8 @@ def upload_to_s3(data, bucket, object_name):
         return False
     return True
 
-# Download CSV data
 data = download("https://data.geo.admin.ch/ch.meteoschweiz.messwerte-aktuell/VQHA80.csv")
 
-# Upload data to S3 bucket
 bucket_name = "ist-grb-muhlemann-test"
 object_name = "VQHA80.csv"
 
