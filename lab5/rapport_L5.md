@@ -63,3 +63,34 @@ $ cat ch.meteoschweiz.messnetz-automatisch_en.json | jq '.features|.[]'
 
 $ cat ch.meteoschweiz.messnetz-automatisch_en.json | jq '.features|.[]|.id' > ids.out
 
+### 7:
+
+$ cat ch.meteoschweiz.messnetz-automatisch_en.json | jq '.features|.[]|.properties.station_name' > name.out
+
+### 8:
+
+$ cat ch.meteoschweiz.messnetz-automatisch_en.json | jq '.features|.[]|.properties.station_name,.id' > name_id.out
+
+### 9:
+
+$ cat ch.meteoschweiz.messnetz-automatisch_en.json | jq -j '.features|.[]|.properties.station_name,.id' > name_id_no_CR.out
+
+### 10:
+$ cat ch.meteoschweiz.messnetz-automatisch_en.json | jq -j '.features|.[]|.id, ",", .properties.station_name' > name_id_no_CR.out
+
+### 11:
+
+$ cat ch.meteoschweiz.messnetz-automatisch_en.json | jq -j '.features|.[]|.id, ",", "\"", .properties.station_name, "\""' > name_id_no_CR.out
+
+
+###12:
+
+$ cat ch.meteoschweiz.messnetz-automatisch_en.json | jq -j '.features|.[]|.id, ",", "\"", .properties.station_name, "\"", .properties.altitude, ",", .geometry.coordinates[0], ",", .geometry.coordinates[1], "\n" ' > altitude_coordinates.out
+
+###13:
+$ echo "id,station_name,altitude,coord_lng,coord_lat" > altitude_coordinates.csv
+$ cat ch.meteoschweiz.messnetz-automatisch_en.json | jq -j '.features|.[]|.id, ",", "\"", .properties.station_name, "\"", .properties.altitude, ",", .geometry.coordinates[0], ",", .geometry.coordinates[1], "\n" ' > altitude_coordinates.csv
+
+## TASK 7:
+
+
