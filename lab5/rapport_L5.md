@@ -154,6 +154,9 @@ TODO checker athena
 
 ## TASK 8:
 
+on a du ajouter une policy sur le bucket car nous utilisons 'putObject' dans la lambda
+![image](inline_policy.png)
+![image](method_boto3.png)
 
 ```python
 import boto3
