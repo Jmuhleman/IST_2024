@@ -35,13 +35,22 @@ It seems to contain only the descriptions and for some attributes the explanatio
 
 >The yellow cab data is available in what types of files?
 It is only available in PARQUET format.
-It seems that some backups are available in csv format according the bucket.
+It seems that some backups are available in csv format according to the bucket.
 
 >Find the copy of the data product in the Registry of Open Data on AWS. What is the bucket name? In which region is the bucket? Open the bucket in the S3 console.
 
 arn:aws:s3:::nyc-tlc is the name of the bucket
 region:US East (N. Virginia) us-east-1
 
->In this lab we are going to use the yellow cab trip data. In which folder are the CSV files for yellow cabs? Does this folder only contain yellow cab data? In which folder are the Parquet files for yellow cabs? Does this folder only contain yellow cab data?
+>In this lab we are going to use the yellow cab trip data. In which folder are the CSV files for yellow cabs?
+>Does this folder only contain yellow cab data?
+>In which folder are the Parquet files for yellow cabs? 
+>Does this folder only contain yellow cab data?
+
+The csv files for yellow cabs are in the s3::nyc-tlc/opendata_repo/opendata_webconvert/yellow.
+Yes they seem to be sorted by vehicle type.
+The PARQUET files for yellow cabs are located in the trip_data folder.
+no it contains mixed up files from all the vehicle types.
+
 
 >Is Amazon's copy up-to-date compared to the original data product?
