@@ -324,7 +324,7 @@ Results :
 Query :
 
 ```SQL
-SELECT c.station, s.altitude, MAX(c.temp) as max_temp
+SELECT c.station, s.altitude, MAX(c.temperature) as max_temp
 FROM current c
 JOIN stations s ON c.station = s.id
 WHERE s.altitude BETWEEN 400 and 499
