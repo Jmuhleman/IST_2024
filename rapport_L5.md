@@ -444,8 +444,11 @@ Since we used the `putObject` action in our lambda (in the `upload_to_s3` functi
 ![Lab05_Task8_inline_policy](./assets/Lab05_Task8_inline_policy.png)
 
 
+We made use of the OLAP (object lambda access point) to figure out whether our lambda script works or not.
 
+![image](lab05_Taks8_transformed_data.png)
 
+We can see the data has been transformed with comma as separators and columns name are human readable.
 
 ## TASK 9: SCENARIO
 
