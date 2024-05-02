@@ -238,7 +238,7 @@ We tried restarting our trigger and changing our lambda function, but nothing he
 
 ```bash
 $ echo "id,station_name,altitude,coord_lng,coord_lat" > altitude_coordinates.csv
-$ cat ch.meteoschweiz.messnetz-automatisch_en.json | jq -j '.features|.[]|.id, ",", "\"", .properties.station_name, "\",", .properties.altitude, ",", .geometry.coordinates[0], ",", .geometry.coordinates[1], "\n"' > altitude_coordinates.csv
+$ cat ch.meteoschweiz.messnetz-automatisch_en.json | jq -j '.features|.[]|.id, ",", "\"", .properties.station_name, "\",", .properties.altitude, ",", .geometry.coordinates[0], ",", .geometry.coordinates[1], "\n"' >> altitude_coordinates.csv
 ```
 
 
