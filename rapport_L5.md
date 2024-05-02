@@ -315,7 +315,7 @@ We used the `BETWEEN` operator because it gives us a clearer view of the query. 
 
 Results :
 
-TODO
+![Lab05_Task7_query5](./assets/Lab05_Task7_query5.png)
 
 
 
@@ -332,10 +332,11 @@ GROUP BY c.station, s.altitude ORDER BY s.altitude;
 ```
 
 We used the `BETWEEN` operator again. For the same reason as before, we used 499 as the upper limit.
-
+NB: We may get some records with no temperature
 Results :
 
-TODO
+![Lab05_Task7_query6](./assets/Lab05_Task7_query6.png)
+
 
 
 
@@ -347,39 +348,34 @@ TODO
 import boto3
 import requests
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import io
 import csv
+from botocore.exceptions import ClientError
 
 def lambda_handler(event, context):
-    def download(url):
-        try:
-            response = requests.get(url)
-            response.raise_for_status()  # Ensure valid HTTP response
-            return response
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Error downloading data: {e}")
-            return None
-    
-    def upload_to_s3(data, bucket, object_name):
+
+    def upload_to_s3(data, rr, rt):
         s3_client = boto3.client('s3')
         try:
-            s3_client.put_object(Body=data, Bucket=bucket, Key=object_name)
+            s3_client.write_get_object_response(Body=data, RequestRoute=rr, RequestToken=rt)
             return True
         except ClientError as e:
             logging.error(f"Error uploading to S3: {e}")
             return False
 
+    object_get_context = event["getObjectContext"]
+    request_route = object_get_context["outputRoute"]
+    request_token = object_get_context["outputToken"]
+    s3_url = object_get_context["inputS3Url"]
 
-    data_url = "https://data.geo.admin.ch/ch.meteoschweiz.messwerte-aktuell/VQHA80.csv"
-    data = download(data_url)
-    #If no data return error
-    if data is None:
-        return {
-        "statusCode": 500,
-        "body": "Failed to download data"
-    }
+    # Get object from S3
+    data = requests.get(s3_url)
 
+    # data_url = "arn:aws:s3-object-lambda:us-east-1:851725581851:accesspoint/meteoswiss-olap-grb"
+    # data = download(data_url)
+
+    # the new columns to be used
     new_column_names = [
     "station", "year", "month", "day", "hour", "minute", 
     "temperature", "precipitation", "sunshine", "radiation", "humidity", 
@@ -388,35 +384,49 @@ def lambda_handler(event, context):
     "wind_dir_vec", "wind_speed_tower", "gust_peak_tower", "temp_tool1", 
     "humidity_tower", "dew_point_tower"
     ]
+    # read the raw data from metoeSwiss
     content = io.StringIO(data.content.decode('utf-8'))
     r = csv.DictReader(content, delimiter=";")
 
+    # create a new data 'processed_csv' to hold the transformed data
     processed_csv = io.StringIO()
+
+    # leave the default delimiter as ',' comma so we replace ; with , as requested
+    # open buffer on processed_csv with header
     w = csv.DictWriter(processed_csv, new_column_names)
+
+    # append the header aka the new column names into buffer
     w.writeheader()
 
+    # from here on, we iterate through each tuple on raw data 
     for row in r:
         current_row = {}
+        # from here iterate through each column with a counter
+        # so that we know where the dateTime related attributes are located
         for i, raw_date in enumerate(row.values()):
-
+            # if we are on datetime attribute
+            # -> extract the time as string into coordinated universal time format. 
+            # I.E. 2024-05-02T14:30:00
             if i == 1:
                 timestamp = datetime.strptime(str(raw_date), "%Y%m%d%H%M")
                 timestamp.replace(tzinfo=timezone.utc)
+                # appending each new attribute as requested
                 current_row.update({"year": timestamp.year, "month": timestamp.month,
                                    "day": timestamp.day, "hour": timestamp.hour,
                                     "minute": timestamp.minute })
             else:
-                # has to jump to +4 if the time columns haven been processed
+                # if we are not processing dateTime related attribute so
+                # jump to +4 if the time columns haven been processed
+                # or id (first attribute)if i==0
                 write_idx = i if i < 1 else i + 4
                 current_row.update({new_column_names[write_idx]: raw_date})
+
+        # finally writing the processed row into buffer
         w.writerow(current_row)
 
-
-    bucket_name = "meteo-grb-muhlemann-butty"
-    object_name_with_timestamp = f"current/VQHA80-{timestamp}.csv"
-
     # Upload the CSV to S3
-    if upload_to_s3(processed_csv.getvalue(), bucket_name, object_name_with_timestamp):
+    # handling error from bucket
+    if upload_to_s3(data=processed_csv.getvalue(), rr=request_route, rt=request_token):
         return {
             "statusCode": 200,
             "body": f"File successfully uploaded to S3 bucket: {bucket_name} with filename {object_name_with_timestamp}"
@@ -426,19 +436,14 @@ def lambda_handler(event, context):
             "statusCode": 500,
             "body": "Failed to upload file to S3"
         }
-
 ```
 
 
 
-Since we used the 0`putObject` action in our lambda (in the `upload_to_s3` function), we had to add a new in-line policy for the bucket:
+Since we used the `putObject` action in our lambda (in the `upload_to_s3` function), we had to add a new in-line policy for the bucket:
 ![Lab05_Task8_inline_policy](./assets/Lab05_Task8_inline_policy.png)
 
 
-
-TODO : Document tests !
-
-TODO : Should the new lambda replace the old one or should it complement it ? ( => download from S3 current > transform > upload on S3 "current_pretty" => Check grH )
 
 
 
