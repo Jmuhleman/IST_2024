@@ -332,10 +332,11 @@ GROUP BY c.station, s.altitude ORDER BY s.altitude;
 ```
 
 We used the `BETWEEN` operator again. For the same reason as before, we used 499 as the upper limit.
-NB: We may get some records with no temperature
 Results :
 
 ![Lab05_Task7_query6](./assets/Lab05_Task7_query6.png)
+
+As we can see, some of the stations don't have a `max_temp` value. This is because not all stations record the temperature.
 
 
 
@@ -446,9 +447,11 @@ Since we used the `putObject` action in our lambda (in the `upload_to_s3` functi
 
 We made use of the OLAP (object lambda access point) to figure out whether our lambda script works or not.
 
-![image](lab05_Taks8_transformed_data.png)
+![lab05_Taks8_transformed_data.png](./assets/lab05_Taks8_transformed_data.png)
 
 We can see the data has been transformed with comma as separators and columns name are human readable.
+
+
 
 ## TASK 9: SCENARIO
 
