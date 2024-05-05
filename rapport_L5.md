@@ -385,7 +385,7 @@ def lambda_handler(event, context):
     "wind_dir_vec", "wind_speed_tower", "gust_peak_tower", "temp_tool1", 
     "humidity_tower", "dew_point_tower"
     ]
-    # read the raw data from metoeSwiss
+    # read the raw data from meteoSwiss
     content = io.StringIO(data.content.decode('utf-8'))
     r = csv.DictReader(content, delimiter=";")
 
@@ -447,7 +447,7 @@ Since we used the `putObject` action in our lambda (in the `upload_to_s3` functi
 
 We made use of the OLAP (object lambda access point) to figure out whether our lambda script works or not.
 
-![lab05_Taks8_transformed_data.png](./assets/lab05_Taks8_transformed_data.png)
+![Lab05_Taks8_transformed_data.png](./assets/lab05_Taks8_transformed_data.png)
 
 We can see the data has been transformed with comma as separators and columns name are human readable.
 
