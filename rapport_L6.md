@@ -53,3 +53,101 @@ The CSV files for yellow cab are located under the prefix [opendata_repo/opendat
 > 6. Is Amazon's copy up-to-date compared to the original data product?
 
 The Amazon copy is not up to date. The latest version of the file (CSV and Parquet) is from December 2022. The TLC Trip Record Data website has data through February 2024. Note that the Taxi publishes trip data monthly (with a two month delay).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## TASK 3: OPTIMISE THE QUERY BY SCANNING ONLY A PARTITION OF THE DATA
+
+DDL definition of the table:
+```text
+CREATE EXTERNAL TABLE IF NOT EXISTS `taxidata_grj`.`jan` (
+  `vendorid` int,
+  `pickup` timestamp,
+  `dropoff` timestamp,
+  `passenger_count` float,
+  `trip_distance` float,
+  `ratecodeid` float,
+  `store_and_fwd_flag` string,
+  `pulocationid` int,
+  `dolocationid` int,
+  `payment_type` int,
+  `fare_amount` float,
+  `extra` float,
+  `mta_tax` float,
+  `tip_amount` float,
+  `tolls_amount` float,
+  `improvement_surcharge` float,
+  `total_amount` float,
+  `congestion_surcharge` float,
+  `airport_fee` float
+)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe'
+WITH SERDEPROPERTIES ('field.delim' = ',')
+STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+LOCATION 's3://aws-tc-largeobjects/CUR-TF-200-ACBDFO-1/Lab2/January2017/'
+TBLPROPERTIES ('classification' = 'csv');
+
+```
+
+
+
+
+
+
+We have seen that the first request is way more expensive for extracting the data of January. In this request we are going through the whole year and we apply the condition on the TIMESTAMP. We see we have to parse 9.32 GB of data.
+
+![image](assets_L6/task_3_query_1.png)
+
+In the second request we are going through January only performing a GROUP BY. In this case we parse only 815.30 MB of data.
+
+![image](assets_L6/task_3_query_2.png)
+
+> Deliverables:
+> In the Athena console display the DDL definition of the table and copy it into the report.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## TASK 5: EXPLORE AND TRANSFORM DATA WITH GLUE DATABREW
+
+>Deliverables:
+>Show the schema of the generated Parquet files in the report.
+>Responses to questions.
