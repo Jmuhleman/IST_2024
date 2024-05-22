@@ -75,6 +75,13 @@ The Amazon copy is not up to date. The latest version of the file (CSV and Parqu
 
 
 ## TASK 3: OPTIMISE THE QUERY BY SCANNING ONLY A PARTITION OF THE DATA
+> Deliverables:
+> In the Athena console display the DDL definition of the table and copy it into the report.
+
+
+
+
+
 
 DDL definition of the table:
 ```text
@@ -120,8 +127,6 @@ In the second request we are going through January only performing a GROUP BY. I
 
 ![image](assets_L6/task_3_query_2.png)
 
-> Deliverables:
-> In the Athena console display the DDL definition of the table and copy it into the report.
 
 
 
@@ -130,11 +135,7 @@ In the second request we are going through January only performing a GROUP BY. I
 
 
 
-
-
-
-
-
+## TASK 4: CREATE A PARTITIONED TABLE IN THE DATA CATALOG WITH A GLUE CRAWLER
 
 
 
@@ -148,6 +149,132 @@ In the second request we are going through January only performing a GROUP BY. I
 
 ## TASK 5: EXPLORE AND TRANSFORM DATA WITH GLUE DATABREW
 
->Deliverables:
->Show the schema of the generated Parquet files in the report.
 >Responses to questions.
+
+2. 
+The max values are showed below in the screenshot. 21.75km for the max distance and 20$ for the biggest tip given, what a lucky driver ;-)
+
+![image](assets_L6/trip_tip.png)
+
+
+3. 
+The inferred data types seem to be correct. 
+
+
+>Show the schema of the generated Parquet files in the report.
+
+Here is the schema of the parquet file:
+
+```text
+
+[
+  {
+    "Name": "vendorid",
+    "Type": "int"
+  },
+  {
+    "Name": "tpep_pickup_datetime",
+    "Type": "timestamp"
+  },
+  {
+    "Name": "tpep_dropoff_datetime",
+    "Type": "timestamp"
+  },
+  {
+    "Name": "passenger_count",
+    "Type": "double"
+  },
+  {
+    "Name": "trip_distance",
+    "Type": "double"
+  },
+  {
+    "Name": "ratecodeid",
+    "Type": "double"
+  },
+  {
+    "Name": "store_and_fwd_flag",
+    "Type": "string"
+  },
+  {
+    "Name": "pulocationid",
+    "Type": "int"
+  },
+  {
+    "Name": "dolocationid",
+    "Type": "int"
+  },
+  {
+    "Name": "payment_type",
+    "Type": "int"
+  },
+  {
+    "Name": "fare_amount",
+    "Type": "double"
+  },
+  {
+    "Name": "extra",
+    "Type": "double"
+  },
+  {
+    "Name": "mta_tax",
+    "Type": "double"
+  },
+  {
+    "Name": "tip_amount",
+    "Type": "double"
+  },
+  {
+    "Name": "tolls_amount",
+    "Type": "double"
+  },
+  {
+    "Name": "improvement_surcharge",
+    "Type": "double"
+  },
+  {
+    "Name": "total_amount",
+    "Type": "double"
+  },
+  {
+    "Name": "congestion_surcharge",
+    "Type": "double"
+  }
+]
+```
+
+
+## TASK 6: SCENARIO
+
+We recommend the following measures:
+
+* Organize the bucket structure in a hierarchical fashion based on geographical regions E.G. continents, countries,...
+
+* Partition the data regarding time intervals E.G. yearly, hourly, daily, etc... as we seen in class to optimize access on data.
+
+* Partition by regions could be an other way to do it.
+
+* Implement a file naming convention. Standardizing naming to include relevant information such as ID, timestamp in a ISO fashion. E.G station_ID_YYYY_MM_DD_HH.parquet
+
+* Create a metadata folder to facilitate access to characteristics concerning stations I.E altitude, latitude, longitude in a separate folder.
+
+* Use parquet file fomrat for an efficient processing and retrieval as well as minimize storage costs and enhance performances.
+
+* Create pipelines (we don't know yet how..) to extract transform and load data in the curated area (as we seen in class).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
